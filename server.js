@@ -70,6 +70,37 @@ app.put('/api/custody/:date', async (req, res) => {
   }
 });
 
+// POST /api/custody/bulk  body: { updates: [{ date, avril, leo }] }
+app.post('/api/custody/bulk', async (req, res) => {
+  const { updates } = req.body;
+  if (!Array.isArray(updates) || updates.length === 0)
+    return res.status(400).json({ error: 'updates must be a non-empty array' });
+
+  const client = await pool.connect();
+  try {
+    await client.query('BEGIN');
+    for (const { date, avril, leo } of updates) {
+      if (!avril && !leo) {
+        await client.query('DELETE FROM custody WHERE date = $1', [date]);
+      } else {
+        await client.query(
+          `INSERT INTO custody (date, avril, leo) VALUES ($1, $2, $3)
+           ON CONFLICT (date) DO UPDATE SET avril = EXCLUDED.avril, leo = EXCLUDED.leo`,
+          [date, avril || null, leo || null]
+        );
+      }
+    }
+    await client.query('COMMIT');
+    res.json({ ok: true, count: updates.length });
+  } catch (err) {
+    await client.query('ROLLBACK');
+    console.error(err);
+    res.status(500).json({ error: err.message });
+  } finally {
+    client.release();
+  }
+});
+
 // SPA fallback
 app.get('*', (_req, res) => {
   res.sendFile(join(__dirname, 'dist', 'index.html'));

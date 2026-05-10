@@ -6,10 +6,8 @@ export function useCustody(year) {
   const [error, setError] = useState(null);
   const custodyRef = useRef(custody);
 
-  // Keep ref in sync with state (for optimistic updates)
   useEffect(() => { custodyRef.current = custody; }, [custody]);
 
-  // Fetch all custody data for the year
   useEffect(() => {
     setLoading(true);
     setError(null);
@@ -19,19 +17,17 @@ export function useCustody(year) {
       .catch(err => { setError(err.message); setLoading(false); });
   }, [year]);
 
-  // Optimistic update + background sync
+  // Single day update
   const updateDay = useCallback(async (dateStr, child, parent) => {
     const current = custodyRef.current[dateStr] ?? {};
     const updated  = { ...current, [child]: parent };
 
-    // Optimistic UI update
     setCustody(prev => {
       const next = { ...prev, [dateStr]: updated };
       if (!next[dateStr].avril && !next[dateStr].leo) delete next[dateStr];
       return next;
     });
 
-    // Sync to server
     try {
       const res = await fetch(`/api/custody/${dateStr}`, {
         method: 'PUT',
@@ -44,5 +40,38 @@ export function useCustody(year) {
     }
   }, []);
 
-  return { custody, loading, error, updateDay };
+  // Bulk update — avril/leo: 'alice' | 'ludo' | 'clear' | null (null = inchangé)
+  const bulkUpdate = useCallback(async (days, { avril, leo }) => {
+    const updates = days.map(dateStr => {
+      const current = custodyRef.current[dateStr] ?? {};
+      return {
+        date:  dateStr,
+        avril: avril === null ? (current.avril ?? null) : (avril === 'clear' ? null : avril),
+        leo:   leo   === null ? (current.leo   ?? null) : (leo   === 'clear' ? null : leo),
+      };
+    });
+
+    // Optimistic
+    setCustody(prev => {
+      const next = { ...prev };
+      for (const { date, avril, leo } of updates) {
+        if (!avril && !leo) delete next[date];
+        else next[date] = { avril, leo };
+      }
+      return next;
+    });
+
+    try {
+      const res = await fetch('/api/custody/bulk', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ updates }),
+      });
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    } catch (err) {
+      console.error('Erreur bulk :', err);
+    }
+  }, []);
+
+  return { custody, loading, error, updateDay, bulkUpdate };
 }

@@ -13,7 +13,7 @@ function getBg(isPH, isSH, isWE, ap, lp) {
   return '#ffffff';
 }
 
-export default function DayCell({ dateStr, day, date, custody, onEdit }) {
+export default function DayCell({ dateStr, day, date, custody, selectionMode, isSelected, onEdit, onToggleSelect }) {
   const dow   = date.getDay();
   const isWE  = dow === 0 || dow === 6;
   const isSH  = isSchoolHoliday(dateStr);
@@ -26,21 +26,33 @@ export default function DayCell({ dateStr, day, date, custody, onEdit }) {
   const tooltipParts = [];
   if (isPH) tooltipParts.push(getPublicHolidayLabel(dateStr) || 'Jour férié');
   if (isSH && !isPH) tooltipParts.push(getSchoolHolidayLabel(dateStr) || 'Vacances');
-  const tooltip = tooltipParts.join(' · ');
 
   const style = {
     background: getBg(isPH, isSH, isWE, ap, lp),
-    border: today ? '2px solid #2196f3' : '1px solid transparent',
+    border: isSelected
+      ? '2px solid #7c3aed'
+      : today
+      ? '2px solid #2196f3'
+      : '1px solid transparent',
+    outline: isSelected ? '2px solid #ddd6fe' : undefined,
   };
 
   return (
-    <div className="day-cell" style={style} onClick={onEdit} title={tooltip || undefined}>
-      {isSH && !isPH && <div className="vac-dot" title={getSchoolHolidayLabel(dateStr)} />}
+    <div
+      className={`day-cell${isSelected ? ' selected' : ''}`}
+      style={style}
+      onClick={selectionMode ? onToggleSelect : onEdit}
+      title={tooltipParts.join(' · ') || undefined}
+    >
+      {isSelected && <div className="sel-check">✓</div>}
+      {!isSelected && isSH && !isPH && <div className="vac-dot" title={getSchoolHolidayLabel(dateStr)} />}
       <span className={`day-num${isPH ? ' ph' : ''}`}>{day}</span>
-      <div className="ci-row">
-        <span className={`ci ci-${ap || 'none'}`} title={`Avril${ap ? ' → ' + (ap === 'alice' ? 'Alice' : 'Ludo') : ''}`}>A</span>
-        <span className={`ci ci-${lp || 'none'}`} title={`Léo${lp   ? ' → ' + (lp  === 'alice' ? 'Alice' : 'Ludo') : ''}`}>L</span>
-      </div>
+      {!selectionMode && (
+        <div className="ci-row">
+          <span className={`ci ci-${ap || 'none'}`}>A</span>
+          <span className={`ci ci-${lp || 'none'}`}>L</span>
+        </div>
+      )}
     </div>
   );
 }
