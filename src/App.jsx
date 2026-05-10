@@ -1,42 +1,17 @@
-import { useState, useCallback } from 'react';
+import { useState } from 'react';
 import MonthGrid from './components/MonthGrid';
 import KPIPanel from './components/KPIPanel';
+import { useCustody } from './hooks/useCustody';
 
 const MONTHS = [
   'Janvier','Février','Mars','Avril','Mai','Juin',
   'Juillet','Août','Septembre','Octobre','Novembre','Décembre',
 ];
 
-const STORAGE_KEY = 'custody-v1';
-
-function load() {
-  try { return JSON.parse(localStorage.getItem(STORAGE_KEY)) || {}; }
-  catch { return {}; }
-}
-
-function save(data) {
-  localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
-}
-
 export default function App() {
-  const [year, setYear]       = useState(new Date().getFullYear());
-  const [custody, setCustody] = useState(load);
+  const [year, setYear] = useState(new Date().getFullYear());
   const [showKPI, setShowKPI] = useState(true);
-
-  const updateDay = useCallback((dateStr, child, parent) => {
-    setCustody(prev => {
-      const next = {
-        ...prev,
-        [dateStr]: { ...prev[dateStr], [child]: parent },
-      };
-      // Remove the day entry if both children are unset
-      if (next[dateStr].avril === null && next[dateStr].leo === null) {
-        delete next[dateStr];
-      }
-      save(next);
-      return next;
-    });
-  }, []);
+  const { custody, loading, error, updateDay } = useCustody(year);
 
   return (
     <div className="app">
@@ -73,8 +48,20 @@ export default function App() {
         <span className="lb-item"><span className="lb-dot ph"  /> Jour férié</span>
         <span className="lb-item"><span className="lb-dot alice-dot" /> Alice</span>
         <span className="lb-item"><span className="lb-dot ludo-dot"  /> Ludo</span>
-        <span className="lb-item"><span className="ci ci-none" style={{fontSize:'0.6rem',width:12,height:12}}>A</span>&nbsp;= Avril&nbsp;&nbsp;<span className="ci ci-none" style={{fontSize:'0.6rem',width:12,height:12}}>L</span>&nbsp;= Léo</span>
+        <span className="lb-item">
+          <span className="ci ci-none" style={{fontSize:'0.6rem',width:12,height:12}}>A</span>
+          &nbsp;= Avril&nbsp;&nbsp;
+          <span className="ci ci-none" style={{fontSize:'0.6rem',width:12,height:12}}>L</span>
+          &nbsp;= Léo
+        </span>
       </div>
+
+      {loading && (
+        <div className="status-bar loading">Chargement des données…</div>
+      )}
+      {error && (
+        <div className="status-bar error">Erreur de connexion : {error}</div>
+      )}
 
       <main className="calendar-container">
         {MONTHS.map((name, i) => (
