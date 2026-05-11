@@ -2,6 +2,7 @@ import { useState, useCallback } from 'react';
 import MonthGrid from './components/MonthGrid';
 import KPIPanel from './components/KPIPanel';
 import BulkEditor from './components/BulkEditor';
+import FAQ from './components/FAQ';
 import { useCustody } from './hooks/useCustody';
 
 const MONTHS = [
@@ -14,6 +15,7 @@ export default function App() {
   const [showKPI, setShowKPI]         = useState(true);
   const [selectionMode, setSelection] = useState(false);
   const [selectedDays, setSelected]   = useState(new Set());
+  const [showFAQ, setShowFAQ]         = useState(false);
 
   const { custody, loading, error, updateDay, bulkUpdate } = useCustody(year);
 
@@ -93,6 +95,9 @@ export default function App() {
           <button className="btn-toggle-kpi" onClick={() => setShowKPI(v => !v)}>
             {showKPI ? 'Masquer stats' : 'Voir stats'}
           </button>
+          <button className="btn-faq" onClick={() => setShowFAQ(true)} aria-label="Aide">
+            ?
+          </button>
         </div>
       </header>
 
@@ -147,6 +152,8 @@ export default function App() {
           onCancel={cancelSelection}
         />
       )}
+
+      {showFAQ && <FAQ onClose={() => setShowFAQ(false)} />}
     </div>
   );
 }
