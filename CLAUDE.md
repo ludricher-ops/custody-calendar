@@ -1,72 +1,70 @@
-# Calendrier de Garde — Avril & Léo
+# CLAUDE.md
 
-Application de gestion de garde alternée entre Alice et Ludo pour leurs enfants Avril et Léo.
-
-## Stack
-
-- **Frontend** : React 18 + Vite
-- **Backend** : Express (Node.js, ESM)
-- **Base de données** : PostgreSQL (`pg`)
-- **Déploiement** : GitHub → Railway (Dockerfile)
-
-## Architecture
-
-```
-custody-calendar/
-├── server.js              # Express API + serving du build React
-├── src/
-│   ├── App.jsx            # Composant racine, state global (année, sélection)
-│   ├── index.css          # Styles globaux (pas de framework CSS)
-│   ├── hooks/
-│   │   └── useCustody.js  # Fetch API, mises à jour optimistes, bulkUpdate
-│   ├── components/
-│   │   ├── MonthGrid.jsx  # Grille d'un mois
-│   │   ├── DayCell.jsx    # Cellule d'un jour (couleur, indicateurs A/L)
-│   │   ├── DayEditor.jsx  # Modal d'édition d'un jour
-│   │   ├── BulkEditor.jsx # Panneau fixe de sélection multiple
-│   │   └── KPIPanel.jsx   # Tableau de stats par mois et par an
-│   └── data/
-│       └── holidays.js    # Vacances scolaires Île-de-France Zone C + jours fériés
-```
-
-## API
-
-| Méthode | Route | Description |
-|---------|-------|-------------|
-| GET | `/api/custody/:year` | Toutes les gardes d'une année |
-| PUT | `/api/custody/:date` | Mise à jour d'un jour |
-| POST | `/api/custody/bulk` | Mise à jour de plusieurs jours (transaction) |
-
-## Schéma PostgreSQL
-
-```sql
-CREATE TABLE custody (
-  date  DATE        PRIMARY KEY,
-  avril VARCHAR(10),  -- 'alice' | 'ludo' | NULL
-  leo   VARCHAR(10)   -- 'alice' | 'ludo' | NULL
-);
-```
-
-La table est créée automatiquement au démarrage du serveur si elle n'existe pas.
-
-## Variables d'environnement
-
-| Variable | Description |
-|----------|-------------|
-| `DATABASE_URL` | URL de connexion PostgreSQL (injectée automatiquement par Railway) |
-| `PORT` | Port du serveur (injecté par Railway, défaut : 3000) |
-
-Pour le dev local, copier `.env.example` en `.env`.
+This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
 ## Workflow
 
-- **Pas de serveur de dev local** — modifications → `npm run build` pour valider → `git push`
-- Railway redéploie automatiquement à chaque push sur `main`
-- Sur Railway : ajouter un plugin **PostgreSQL**, `DATABASE_URL` est injectée automatiquement
+**Pas de serveur de dev local.** Pour chaque modification :
 
-## Conventions
+```bash
+npm run build   # valide la compilation TypeScript/JSX
+git add .
+git commit -m "..."
+git push        # Railway redéploie automatiquement
+```
 
-- Alice = rose (`#d81b8c`)
-- Ludo = bleu (`#1565c0`)
-- `A` = Avril, `L` = Léo dans les cellules du calendrier
-- Les mises à jour sont **optimistes** : l'UI se met à jour immédiatement, la sync PostgreSQL se fait en arrière-plan
+## Stack
+
+- **Frontend** : React 18 + Vite, `"type": "module"` — utiliser `import`/`export` partout
+- **Backend** : Express dans `server.js` — sert l'API REST **et** les fichiers statiques `dist/`
+- **Base de données** : PostgreSQL via `pg` (pas d'ORM)
+- **Déploiement** : Dockerfile multi-stage → Railway
+
+## Architecture & data flow
+
+L'état de garde est un objet plat indexé par date :
+```js
+{ "YYYY-MM-DD": { avril: "alice" | "ludo" | null, leo: "alice" | "ludo" | null } }
+```
+
+Toutes les interactions passent par `useCustody` (`src/hooks/useCustody.js`) :
+- Charge l'année entière en une requête au montage
+- `custodyRef` (useRef) maintient l'état courant disponible dans les callbacks sans les invalider — nécessaire pour les mises à jour optimistes
+- **Toutes les mises à jour sont optimistes** : `setCustody` avant le `fetch`
+- `updateDay(dateStr, child, parent)` → `PUT /api/custody/:date`
+- `bulkUpdate(days[], { avril, leo })` → `POST /api/custody/bulk` (transaction atomique). La valeur `'clear'` met à `null`, `null` signifie inchangé
+
+## API
+
+| Méthode | Route | Corps |
+|---------|-------|-------|
+| GET | `/api/custody/:year` | — |
+| PUT | `/api/custody/:date` | `{ avril, leo }` |
+| POST | `/api/custody/bulk` | `{ updates: [{ date, avril, leo }] }` |
+
+Quand `avril` et `leo` sont tous les deux falsy, la ligne est supprimée (pas de garde = pas de row).
+
+## Base de données
+
+Table unique créée automatiquement au démarrage :
+```sql
+CREATE TABLE IF NOT EXISTS custody (
+  date  DATE PRIMARY KEY,
+  avril VARCHAR(10),
+  leo   VARCHAR(10)
+);
+```
+
+SSL activé automatiquement si `DATABASE_URL` ne contient pas `localhost`. En local, copier `.env.example` → `.env`.
+
+## Vacances scolaires
+
+Codées en dur dans `src/data/holidays.js` (Île-de-France Zone C) jusqu'en 2027. **Mettre à jour manuellement chaque année** en ajoutant un bloc dans `SCHOOL_HOLIDAYS` et les jours fériés mobiles dans `VARIABLE_HOLIDAYS`.
+
+## Sélection multiple
+
+Le mode sélection est entièrement géré dans `App.jsx` (état `selectionMode` + `selectedDays` Set). `DayCell` change de comportement selon `selectionMode` : clic = toggle sélection au lieu d'ouvrir le modal. `BulkEditor` est un panneau fixe en bas, visible dès qu'au moins un jour est sélectionné.
+
+## Déploiement Railway
+
+Ajouter un plugin **PostgreSQL** dans le projet Railway → `DATABASE_URL` est injectée automatiquement. Le Dockerfile fait un build en deux étapes : build Vite puis image Node légère avec uniquement `dist/`, `server.js` et les dépendances de production.
