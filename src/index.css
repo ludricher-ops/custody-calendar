@@ -61,6 +61,13 @@ body { background: #f0f2f5; color: var(--text); min-height: 100vh; }
 }
 .btn-toggle-kpi:hover { background: #f0f0f0; }
 
+.btn-print {
+  background: none; border: 1px solid var(--border); border-radius: 6px;
+  padding: 5px 14px; cursor: pointer; font-size: .8rem; color: #555;
+  transition: background .15s;
+}
+.btn-print:hover { background: #f0f0f0; }
+
 /* ── KPI Panel ── */
 .kpi-panel {
   background: #fff; border-bottom: 1px solid var(--border);
@@ -125,6 +132,10 @@ body { background: #f0f2f5; color: var(--text); min-height: 100vh; }
 @media (max-width: 1100px) { .calendar-container { grid-template-columns: repeat(3, 1fr); } }
 @media (max-width: 780px)  { .calendar-container { grid-template-columns: repeat(2, 1fr); } }
 @media (max-width: 500px)  { .calendar-container { grid-template-columns: 1fr; } }
+
+/* à l'écran les semestres sont transparents : les mois restent enfants directs de la grille */
+.semester { display: contents; }
+.kpi-hidden-screen { display: none; }
 
 /* ── Month card ── */
 .month-card {
@@ -412,10 +423,29 @@ details[open] .faq-question::after { transform: rotate(90deg); color: #7c3aed; }
 .status-bar.loading { background: #e3f2fd; color: #1565c0; }
 .status-bar.error   { background: #fce4ec; color: #c62828; }
 
-/* ── Print ── */
+/* ── Print : page 1 = récap, page 2 = 1er semestre, page 3 = 2e semestre ── */
 @media print {
-  .app-header, .kpi-panel, .legend-bar { position: static; box-shadow: none; }
-  .btn-toggle-kpi, .year-nav { display: none; }
-  .calendar-container { grid-template-columns: repeat(4, 1fr); gap: 8px; padding: 8px; }
+  @page { size: A4 landscape; margin: 8mm; }
+
+  * { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+
+  .app-header { position: static; box-shadow: none; }
+  .kpi-panel { position: static; box-shadow: none; }
+  .header-controls, .legend-bar, .selection-banner, .status-bar { display: none; }
+
+  /* récap toujours imprimé, sur sa propre page */
+  .kpi-hidden-screen { display: block; }
+  .kpi-wrap { break-after: page; }
+
+  /* calendrier : un semestre par page, 6 mois en grille 3×2 */
+  .calendar-container { display: block; padding: 0; }
+  .semester {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 6px;
+  }
+  .semester-2 { break-before: page; }
+
+  .month-card { break-inside: avoid; box-shadow: none; }
   .day-cell:hover { transform: none; box-shadow: none; }
 }

@@ -95,13 +95,20 @@ export default function App() {
           <button className="btn-toggle-kpi" onClick={() => setShowKPI(v => !v)}>
             {showKPI ? 'Masquer stats' : 'Voir stats'}
           </button>
+          <button className="btn-print" onClick={() => window.print()}>
+            🖨 Imprimer
+          </button>
           <button className="btn-faq" onClick={() => setShowFAQ(true)} aria-label="Aide">
             ?
           </button>
         </div>
       </header>
 
-      {showKPI && !selectionMode && <KPIPanel custody={custody} year={year} />}
+      {!selectionMode && (
+        <div className={showKPI ? 'kpi-wrap' : 'kpi-wrap kpi-hidden-screen'}>
+          <KPIPanel custody={custody} year={year} />
+        </div>
+      )}
 
       {!selectionMode && (
         <div className="legend-bar">
@@ -128,20 +135,27 @@ export default function App() {
       {error   && <div className="status-bar error">Erreur de connexion : {error}</div>}
 
       <main className="calendar-container">
-        {MONTHS.map((name, i) => (
-          <MonthGrid
-            key={i}
-            year={year}
-            month={i}
-            monthName={name}
-            custody={custody}
-            onUpdateDay={updateDay}
-            selectionMode={selectionMode}
-            selectedDays={selectedDays}
-            onToggleDay={toggleDay}
-            onSelectMonth={() => selectMonth(year, i)}
-            onDeselectMonth={() => deselectMonth(year, i)}
-          />
+        {[[0, 'semester-1'], [6, 'semester-2']].map(([start, cls]) => (
+          <div key={cls} className={`semester ${cls}`}>
+            {MONTHS.slice(start, start + 6).map((name, idx) => {
+              const i = start + idx;
+              return (
+                <MonthGrid
+                  key={i}
+                  year={year}
+                  month={i}
+                  monthName={name}
+                  custody={custody}
+                  onUpdateDay={updateDay}
+                  selectionMode={selectionMode}
+                  selectedDays={selectedDays}
+                  onToggleDay={toggleDay}
+                  onSelectMonth={() => selectMonth(year, i)}
+                  onDeselectMonth={() => deselectMonth(year, i)}
+                />
+              );
+            })}
+          </div>
         ))}
       </main>
 
