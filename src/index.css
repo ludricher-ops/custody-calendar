@@ -179,6 +179,13 @@ body { background: #f0f2f5; color: var(--text); min-height: 100vh; }
   background: #e6c700;
 }
 
+/* Note indicator (top-right corner) */
+.note-mark {
+  position: absolute; top: 1px; right: 2px;
+  font-size: .55rem; line-height: 1; opacity: .85;
+  pointer-events: none;
+}
+
 .day-num {
   font-size: .62rem; font-weight: 700; color: #555; line-height: 1.2;
 }
@@ -263,6 +270,25 @@ body { background: #f0f2f5; color: var(--text); min-height: 100vh; }
 }
 .summary-chip.alice { background: var(--alice); }
 .summary-chip.ludo  { background: var(--ludo); }
+
+/* ── Note (modal) ── */
+.note-row {
+  display: flex; flex-direction: column; gap: 6px;
+  margin-top: 18px;
+}
+.note-label {
+  font-size: .78rem; font-weight: 700; color: #555;
+}
+.note-input {
+  font: inherit; font-size: .85rem;
+  padding: 8px 10px; border-radius: 8px;
+  border: 1px solid var(--border); background: #fafafa;
+  resize: vertical; min-height: 44px;
+  transition: border-color .15s, background .15s;
+}
+.note-input:focus {
+  outline: none; border-color: #7c3aed; background: #fff;
+}
 
 /* ── FAQ button ── */
 .btn-faq {

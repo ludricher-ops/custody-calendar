@@ -5,7 +5,7 @@ import DayEditor from './DayEditor';
 const DOW_LABELS = ['Lu', 'Ma', 'Me', 'Je', 'Ve', 'Sa', 'Di'];
 
 export default function MonthGrid({
-  year, month, monthName, custody, onUpdateDay,
+  year, month, monthName, custody, onUpdateDay, onUpdateNote,
   selectionMode, selectedDays, onToggleDay, onSelectMonth, onDeselectMonth,
 }) {
   const [editing, setEditing] = useState(null);
@@ -69,6 +69,7 @@ export default function MonthGrid({
           dateStr={editing}
           custody={custody[editing]}
           onUpdate={(child, parent) => onUpdateDay(editing, child, parent)}
+          onUpdateNote={(note) => onUpdateNote(editing, note)}
           onClose={() => setEditing(null)}
         />
       )}

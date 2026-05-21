@@ -22,24 +22,27 @@ await pool.query(`
     leo   VARCHAR(10)
   )
 `);
+await pool.query(`ALTER TABLE custody ADD COLUMN IF NOT EXISTS note TEXT`);
 
 const app = express();
 app.use(express.json());
 app.use(express.static(join(__dirname, 'dist')));
 
-// GET /api/custody/:year  →  { "YYYY-MM-DD": { avril, leo }, … }
+// GET /api/custody/:year  →  { "YYYY-MM-DD": { avril, leo, note? }, … }
 app.get('/api/custody/:year', async (req, res) => {
   try {
     const { year } = req.params;
     const { rows } = await pool.query(
-      `SELECT to_char(date, 'YYYY-MM-DD') AS ds, avril, leo
+      `SELECT to_char(date, 'YYYY-MM-DD') AS ds, avril, leo, note
          FROM custody
         WHERE EXTRACT(YEAR FROM date) = $1`,
       [Number(year)]
     );
     const data = {};
     for (const row of rows) {
-      data[row.ds] = { avril: row.avril, leo: row.leo };
+      const entry = { avril: row.avril, leo: row.leo };
+      if (row.note) entry.note = row.note;
+      data[row.ds] = entry;
     }
     res.json(data);
   } catch (err) {
@@ -48,19 +51,20 @@ app.get('/api/custody/:year', async (req, res) => {
   }
 });
 
-// PUT /api/custody/:date  body: { avril, leo }
+// PUT /api/custody/:date  body: { avril, leo, note }
 app.put('/api/custody/:date', async (req, res) => {
   try {
     const { date } = req.params;
-    const { avril, leo } = req.body;
+    const { avril, leo, note } = req.body;
+    const noteVal = (typeof note === 'string' && note.trim()) ? note.trim() : null;
 
-    if (!avril && !leo) {
+    if (!avril && !leo && !noteVal) {
       await pool.query('DELETE FROM custody WHERE date = $1', [date]);
     } else {
       await pool.query(
-        `INSERT INTO custody (date, avril, leo) VALUES ($1, $2, $3)
-         ON CONFLICT (date) DO UPDATE SET avril = EXCLUDED.avril, leo = EXCLUDED.leo`,
-        [date, avril || null, leo || null]
+        `INSERT INTO custody (date, avril, leo, note) VALUES ($1, $2, $3, $4)
+         ON CONFLICT (date) DO UPDATE SET avril = EXCLUDED.avril, leo = EXCLUDED.leo, note = EXCLUDED.note`,
+        [date, avril || null, leo || null, noteVal]
       );
     }
     res.json({ ok: true });
@@ -80,15 +84,21 @@ app.post('/api/custody/bulk', async (req, res) => {
   try {
     await client.query('BEGIN');
     for (const { date, avril, leo } of updates) {
-      if (!avril && !leo) {
-        await client.query('DELETE FROM custody WHERE date = $1', [date]);
-      } else {
-        await client.query(
-          `INSERT INTO custody (date, avril, leo) VALUES ($1, $2, $3)
-           ON CONFLICT (date) DO UPDATE SET avril = EXCLUDED.avril, leo = EXCLUDED.leo`,
-          [date, avril || null, leo || null]
-        );
-      }
+      // bulk ne touche pas le champ note : on upsert avril/leo puis on supprime la
+      // ligne uniquement si tout est vide, note comprise
+      await client.query(
+        `INSERT INTO custody (date, avril, leo) VALUES ($1, $2, $3)
+         ON CONFLICT (date) DO UPDATE SET avril = EXCLUDED.avril, leo = EXCLUDED.leo`,
+        [date, avril || null, leo || null]
+      );
+      await client.query(
+        `DELETE FROM custody
+          WHERE date = $1
+            AND avril IS NULL
+            AND leo IS NULL
+            AND (note IS NULL OR note = '')`,
+        [date]
+      );
     }
     await client.query('COMMIT');
     res.json({ ok: true, count: updates.length });

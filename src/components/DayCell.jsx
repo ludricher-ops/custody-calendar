@@ -46,6 +46,7 @@ export default function DayCell({ dateStr, day, date, custody, selectionMode, is
     >
       {isSelected && <div className="sel-check">✓</div>}
       {!isSelected && isSH && !isPH && <div className="vac-dot" title={getSchoolHolidayLabel(dateStr)} />}
+      {!isSelected && custody?.note && <div className="note-mark" title={custody.note}>📝</div>}
       <span className={`day-num${isPH ? ' ph' : ''}`}>{day}</span>
       {!selectionMode && (
         <div className="ci-row">

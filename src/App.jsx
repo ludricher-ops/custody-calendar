@@ -17,7 +17,7 @@ export default function App() {
   const [selectedDays, setSelected]   = useState(new Set());
   const [showFAQ, setShowFAQ]         = useState(false);
 
-  const { custody, loading, error, updateDay, bulkUpdate } = useCustody(year);
+  const { custody, loading, error, updateDay, updateNote, bulkUpdate } = useCustody(year);
 
   const toggleDay = useCallback((dateStr) => {
     setSelected(prev => {
@@ -147,6 +147,7 @@ export default function App() {
                   monthName={name}
                   custody={custody}
                   onUpdateDay={updateDay}
+                  onUpdateNote={updateNote}
                   selectionMode={selectionMode}
                   selectedDays={selectedDays}
                   onToggleDay={toggleDay}
