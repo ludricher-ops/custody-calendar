@@ -8,16 +8,16 @@ const SCHOOL_HOLIDAYS = [
   { label: 'Printemps 2025',   start: '2025-04-19', end: '2025-05-04' },
   { label: 'Été 2025',         start: '2025-07-05', end: '2025-08-31' },
   // 2025-2026
-  { label: 'Toussaint 2025',   start: '2025-10-18', end: '2025-11-02' },
-  { label: 'Noël 2025',        start: '2025-12-20', end: '2026-01-04' },
-  { label: 'Hiver 2026',       start: '2026-02-21', end: '2026-03-08' },
-  { label: 'Printemps 2026',   start: '2026-04-11', end: '2026-04-26' },
+  { label: 'Toussaint 2025',   start: '2025-10-18', end: '2025-11-01' },
+  { label: 'Noël 2025',        start: '2025-12-20', end: '2026-01-03' },
+  { label: 'Hiver 2026',       start: '2026-02-21', end: '2026-03-07' },
+  { label: 'Printemps 2026',   start: '2026-04-11', end: '2026-04-25' },
   { label: 'Été 2026',         start: '2026-07-04', end: '2026-08-31' },
   // 2026-2027
-  { label: 'Toussaint 2026',   start: '2026-10-17', end: '2026-11-02' },
-  { label: 'Noël 2026',        start: '2026-12-19', end: '2027-01-04' },
-  { label: 'Hiver 2027',       start: '2027-02-06', end: '2027-02-22' },
-  { label: 'Printemps 2027',   start: '2027-04-03', end: '2027-04-19' },
+  { label: 'Toussaint 2026',   start: '2026-10-17', end: '2026-11-01' },
+  { label: 'Noël 2026',        start: '2026-12-19', end: '2027-01-03' },
+  { label: 'Hiver 2027',       start: '2027-02-06', end: '2027-02-21' },
+  { label: 'Printemps 2027',   start: '2027-04-03', end: '2027-04-18' },
   { label: 'Été 2027',         start: '2027-07-03', end: '2027-08-31' },
 ];
 
