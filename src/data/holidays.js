@@ -18,6 +18,7 @@ const SCHOOL_HOLIDAYS = [
   { label: 'Noël 2026',        start: '2026-12-19', end: '2027-01-03' },
   { label: 'Hiver 2027',       start: '2027-02-06', end: '2027-02-21' },
   { label: 'Printemps 2027',   start: '2027-04-03', end: '2027-04-18' },
+  { label: 'Pont mai 2027',     start: '2027-05-05', end: '2027-05-09' },
   { label: 'Été 2027',         start: '2027-07-03', end: '2027-08-31' },
 ];
 
